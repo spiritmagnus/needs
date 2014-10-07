@@ -11,6 +11,8 @@ import com.basho.riak.client.api.RiakClient;
 import com.basho.riak.client.api.cap.Quorum;
 import com.basho.riak.client.api.commands.kv.FetchValue;
 import com.basho.riak.client.api.commands.kv.StoreValue;
+import com.basho.riak.client.core.RiakCluster;
+import com.basho.riak.client.core.RiakNode;
 import com.basho.riak.client.core.query.Location;
 import com.basho.riak.client.core.query.Namespace;
 import com.basho.riak.client.core.query.RiakObject;
@@ -21,19 +23,23 @@ import vgs.Persistence;
 import vgs.gamestate.entity.GameState;
 
 @Stateless
-@Persistence(DataStore.REDIS)
+@Persistence(DataStore.RIAK)
 public class RiakGameStateRepository implements GameStateRepository {
-
-    private final int port = 6379;
 
     private RiakClient client;
 
     private final JacksonSerializer<GameState> serializer = new JacksonSerializer<>(GameState.class);
-    private final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
 
     public RiakGameStateRepository() {
         try {
-            client = RiakClient.newClient("127.0.0.1");
+            RiakNode.Builder builder = new RiakNode.Builder().
+                    withMinConnections(10).
+                    withMaxConnections(200).
+                    withRemotePort(8087).
+                    withRemoteAddress("127.0.0.1");
+            RiakCluster cluster = new RiakCluster.Builder(builder.build()).build();
+            cluster.start();
+            client = new RiakClient(cluster);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -66,6 +72,9 @@ public class RiakGameStateRepository implements GameStateRepository {
         try {
             response = client.execute(fv);
             RiakObject obj = response.getValue(RiakObject.class);
+            if (obj == null || obj.getValue() == null) {
+                return Optional.empty();
+            }
             GameState gameState = serializer.fromByteBuffer(ByteBuffer.wrap(obj.getValue().getValue()));
 
             return Optional.ofNullable(gameState);

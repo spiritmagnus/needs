@@ -1,5 +1,5 @@
 package vgs;
 
 public enum DataStore {
-    IN_MEMORY, DB, CASSANDRA, REDIS
+    IN_MEMORY, DB, CASSANDRA, RIAK, REDIS
 }
