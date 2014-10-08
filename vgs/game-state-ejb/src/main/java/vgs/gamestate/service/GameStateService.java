@@ -14,7 +14,7 @@ import vgs.gamestate.repository.GameStateRepository;
 public class GameStateService {
 
     @Inject
-    @Persistence(DataStore.RIAK)
+    @Persistence(DataStore.REDIS)
     private GameStateRepository repository;
 
     public GameState getGameState(Long gameRoundId) {
