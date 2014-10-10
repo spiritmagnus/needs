@@ -1,10 +1,12 @@
 package vgs.gamestate.entity;
 
+import java.io.Serializable;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
 @Entity
-public class GameState {
+public class GameState implements Serializable {
 
     @Id
     private final Long gameRoundId;
