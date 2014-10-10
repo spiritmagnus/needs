@@ -32,6 +32,7 @@ public class RedisGameStateRepository implements GameStateRepository {
 
     @Override
     public Optional<GameState> getGameState(Long gameRoundId) {
+        String info = jedis.info();
         buffer.clear();
         buffer.putLong(gameRoundId);
 
@@ -42,6 +43,7 @@ public class RedisGameStateRepository implements GameStateRepository {
         }
 
         GameState gameState = serializer.fromByteBuffer(ByteBuffer.wrap(bytes));
+
         return Optional.ofNullable(gameState);
     }
 }

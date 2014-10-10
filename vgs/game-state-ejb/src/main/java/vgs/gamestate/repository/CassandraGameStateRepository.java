@@ -13,6 +13,7 @@ import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.connectionpool.impl.ConnectionPoolConfigurationImpl;
 import com.netflix.astyanax.connectionpool.impl.ConnectionPoolType;
 import com.netflix.astyanax.connectionpool.impl.CountingConnectionPoolMonitor;
+import com.netflix.astyanax.ddl.KeyspaceDefinition;
 import com.netflix.astyanax.impl.AstyanaxConfigurationImpl;
 import com.netflix.astyanax.model.ColumnFamily;
 import com.netflix.astyanax.model.ColumnList;
@@ -24,7 +25,6 @@ import com.netflix.astyanax.serializers.BytesArraySerializer;
 import com.netflix.astyanax.serializers.IntegerSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
-
 import vgs.DataStore;
 import vgs.Persistence;
 import vgs.gamestate.entity.GameState;
@@ -48,10 +48,11 @@ public class CassandraGameStateRepository implements GameStateRepository {
                 )
                 .withConnectionPoolConfiguration(new ConnectionPoolConfigurationImpl("MyConnectionPool")
                                 .setPort(9160)
-                                .setMaxConnsPerHost(3)
+                                .setMaxConnsPerHost(20)
                                 .setConnectTimeout(4000)
                                 .setSocketTimeout(15000)
-                                .setSeeds("127.0.0.1:9160,127.0.0.1:9161")
+                                .setSeeds("127.0.0.1:9160")
+                                .setLatencyAwareResetInterval(10000)
                 )
                 .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
                         .setCqlVersion("3.0.0")
@@ -110,6 +111,7 @@ public class CassandraGameStateRepository implements GameStateRepository {
     public Optional<GameState> getGameState(Long gameRoundId) {
         Rows<Integer, String> rows = null;
         try {
+            KeyspaceDefinition keyspaceDefinition = keyspace.describeKeyspace();
             rows = keyspace.prepareQuery(CF_GAME_STATE)
                     .withCql("SELECT * from gamestate where gameRoundId = ?")
                     .asPreparedStatement()
